@@ -1,0 +1,51 @@
+
+service: ctpjob-ctp-database
+
+custom:
+  # Our stage is based on what is passed in when running serverless
+  # commands. Or fallsback to what we have set in the provider section.
+  stage: ${opt:stage, self:provider.stage}
+  # Set the table name here so we can use it while testing locally
+  tableName: ${self:custom.stage}-ctp-ctpjob
+
+provider:
+  name: aws
+  stage: dev
+  region: us-east-1
+
+resources:
+  Resources:
+    CtpJobTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        # Generate a name based on the stage
+        TableName: ${self:custom.tableName}
+        AttributeDefinition:
+          - AttributeName: ctp_job_id
+            AttributeType: S
+          - AttributeName: state
+            AttributeType: S
+          - AttributeName: job_type
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ctp_job_id
+            KeyType: HASH
+          - AttributeName: state
+            KeyType: RANGE
+          - AttributeName: job_type
+            KeyType: RANGE
+          - AttributeName: timestamp
+            KeyType: RANGE
+        # Set the capacity to auto-scale
+        BillingMode: PAY_PER_REQUEST
+
+  Outputs:
+    CtpJobTableArn:
+      Value:
+         Fn::GetAtt:
+          - CtpJobTable
+          - Arn
+      Export:
+        Name: ${self:custom.stage}-CtpCtpJobTableArn
